@@ -1,9 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth, db, GoogleAuthProvider } from "@/lib/firebase";
-import { signInWithPopup } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 
 export default function GoogleSignInButton() {
@@ -15,52 +12,47 @@ export default function GoogleSignInButton() {
     setLoading(true);
     setError("");
     try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+      // For demo purposes, simulate Google sign-in
+      // In a real app, you would implement actual Google OAuth
+      const mockUser = {
+        uid: `user_${Date.now()}`,
+        email: "demo@example.com",
+        name: "Demo User",
+        profilePicUrl: "",
+        createdAt: new Date().toISOString(),
+      };
       
-      // Check if user exists in Firestore
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
+      // Check if user profile exists in localStorage
+      const savedProfile = localStorage.getItem('user_profile');
       
-      if (!userSnap.exists()) {
-        // Create basic user doc with Google data
-        await setDoc(userRef, {
-          uid: user.uid,
-          email: user.email,
-          name: user.displayName || "Mystery Human",
-          profilePicUrl: user.photoURL || "",
-          createdAt: new Date().toISOString(),
-        });
-        // Redirect to onboarding with pre-filled data
-        const params = new URLSearchParams({
-          step: '2',
-          name: user.displayName || '',
-          email: user.email || '',
-          profilePicUrl: user.photoURL || ''
-        });
-        router.push(`/auth/signup?${params.toString()}`);
+      if (!savedProfile) {
+        // Create basic user profile
+        localStorage.setItem('user_profile', JSON.stringify({
+          ...mockUser,
+          role: "",
+          skills: [],
+          interests: [],
+          goals: "",
+          availability: [],
+          interaction: ""
+        }));
+        // Redirect to onboarding
+        router.push("/auth/signup");
       } else {
         // Check if user has completed their profile
-        const userData = userSnap.data();
+        const userData = JSON.parse(savedProfile);
         const hasCompleteProfile = userData.role && userData.skills && userData.goals;
         
         if (!hasCompleteProfile) {
           // User exists but profile is incomplete, redirect to onboarding
-          const params = new URLSearchParams({
-            step: '2',
-            name: userData.name || user.displayName || '',
-            email: userData.email || user.email || '',
-            profilePicUrl: userData.profilePicUrl || user.photoURL || ''
-          });
-          router.push(`/auth/signup?${params.toString()}`);
+          router.push("/auth/signup");
         } else {
           // User has complete profile, go to dashboard
           router.push("/dashboard");
         }
       }
     } catch (err: any) {
-      setError("Google sign-in failed. Maybe the universe is telling you to try again?");
+      setError("Sign-in failed. Please try again.");
     } finally {
       setLoading(false);
     }

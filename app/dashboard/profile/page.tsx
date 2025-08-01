@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { User, Camera, Save, RefreshCw, AlertCircle, CheckCircle } from "lucide-react";
 
 const ROLES = [
@@ -24,7 +23,6 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const storage = getStorage();
 
   // Form fields
   const [name, setName] = useState("");
@@ -41,9 +39,30 @@ export default function ProfilePage() {
   const [profilePicUrl, setProfilePicUrl] = useState("");
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
+
     const fetchProfile = async () => {
       try {
-        
+        // Load profile from localStorage
+        const savedProfile = localStorage.getItem('user_profile');
+        if (savedProfile) {
+          const profileData = JSON.parse(savedProfile);
+          setName(profileData.name || "");
+          setRole(profileData.role || "");
+          setAge(profileData.age || "");
+          setLocation(profileData.location || "");
+          setLinkedin(profileData.linkedin || "");
+          setSkills(profileData.skills || []);
+          setInterests(profileData.interests || []);
+          setGoals(profileData.goals || "");
+          setAvailability(profileData.availability || []);
+          setInteraction(profileData.interaction || "");
+          setProfilePicUrl(profileData.profilePicUrl || "");
+        }
       } catch (e) {
         setError("Failed to fetch profile.");
       } finally {
@@ -65,7 +84,30 @@ export default function ProfilePage() {
     setError("");
     setSuccess(false);
     try {
+      // Handle profile picture upload (simplified without Firebase)
+      if (profilePic) {
+        // For demo purposes, create a local URL
+        const imageUrl = URL.createObjectURL(profilePic);
+        setProfilePicUrl(imageUrl);
+      }
     
+      // Save profile data to localStorage for demo
+      const profileData = {
+        name,
+        role,
+        age,
+        location,
+        linkedin,
+        skills,
+        interests,
+        goals,
+        availability,
+        interaction,
+        profilePicUrl: profilePicUrl || "",
+        updatedAt: new Date().toISOString()
+      };
+      
+      localStorage.setItem('user_profile', JSON.stringify(profileData));
       setSuccess(true);
      
       setTimeout(() => setSuccess(false), 3000);
@@ -91,6 +133,8 @@ export default function ProfilePage() {
       </div>
     );
   }
+
+
 
   return (
     <div className="w-full max-w-4xl mx-auto">

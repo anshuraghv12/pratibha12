@@ -1,18 +1,4 @@
-import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import Fuse from 'fuse.js';
-
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getFirestore(app);
 
 const masterSkills = [
   'graphic design', 'web development', 'ui/ux', 'content writing',
@@ -67,10 +53,32 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing userProfile in body' });
   }
   try {
-    const usersSnap = await getDocs(collection(db, 'users'));
-    const allUsers = usersSnap.docs.map(doc => doc.data());
+    // Generate mock users for demo
+    const mockUsers = [
+      {
+        uid: "1",
+        name: "Alex Johnson",
+        role: "buddy",
+        skills: ["javascript", "react", "python"],
+        interests: ["web development", "AI", "startups"],
+        goals: "Build a successful tech career and help others grow",
+        availability: ["monday", "wednesday", "friday"],
+        location: "San Francisco, CA"
+      },
+      {
+        uid: "2",
+        name: "Sarah Chen",
+        role: "buddy",
+        skills: ["python", "data science", "machine learning"],
+        interests: ["AI", "research", "statistics"],
+        goals: "Master data science and contribute to research",
+        availability: ["tuesday", "thursday", "weekends"],
+        location: "New York, NY"
+      }
+    ];
+    
     // Filter out self and same role (customize as needed)
-    const candidates = allUsers.filter(
+    const candidates = mockUsers.filter(
       u => u.uid !== userProfile.uid && u.role !== userProfile.role
     );
     // Score and sort

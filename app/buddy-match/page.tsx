@@ -8,9 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Heart, Users, MessageCircle, Search, Filter, MapPin, Clock, Target, Zap, ArrowLeft } from "lucide-react";
-import { auth, db } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 
 export default function BuddyMatchPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -19,39 +16,88 @@ export default function BuddyMatchPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let unsub: any;
-    setLoading(true);
-    unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        setError("You must be signed in to view matches.");
-        setLoading(false);
-        return;
-      }
+    // Only run on client side
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
+
+    const loadMatches = async () => {
       try {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (!userDoc.exists()) {
-          setError("User profile not found.");
+        setLoading(true);
+        
+        // Load user profile from localStorage
+        const savedProfile = localStorage.getItem('user_profile');
+        if (!savedProfile) {
+          setError("Please complete your profile first.");
           setLoading(false);
           return;
         }
-        const userProfile = userDoc.data();
-        const res = await fetch("/api/match/buddy", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userProfile }),
-        });
-        if (!res.ok) throw new Error("Failed to fetch matches");
-        const data = await res.json();
-        setMatches(data.matches || []);
+
+        const userProfile = JSON.parse(savedProfile);
+        
+        // Generate mock matches for demo
+        const mockMatches = generateMockMatches(userProfile);
+        setMatches(mockMatches);
         setError("");
-      } catch (e: any) {
-        setError(e.message || "Failed to load matches");
+      } catch (error) {
+        console.error('Error loading matches:', error);
+        setError("Failed to load matches");
+        setLoading(false);
       } finally {
         setLoading(false);
       }
-    });
-    return () => unsub && unsub();
+    };
+
+    loadMatches();
   }, []);
+
+  // Generate mock matches for demo
+  const generateMockMatches = (userProfile: any) => {
+    const mockUsers = [
+      {
+        uid: "1",
+        name: "Alex Johnson",
+        role: "buddy",
+        skills: ["javascript", "react", "python"],
+        interests: ["web development", "AI", "startups"],
+        goals: "Build a successful tech career and help others grow",
+        availability: ["monday", "wednesday", "friday"],
+        location: "San Francisco, CA",
+        profilePicUrl: "",
+        bio: "Passionate developer looking for study partners"
+      },
+      {
+        uid: "2",
+        name: "Sarah Chen",
+        role: "buddy",
+        skills: ["python", "data science", "machine learning"],
+        interests: ["AI", "research", "statistics"],
+        goals: "Master data science and contribute to research",
+        availability: ["tuesday", "thursday", "weekends"],
+        location: "New York, NY",
+        profilePicUrl: "",
+        bio: "Data science enthusiast seeking collaboration"
+      },
+      {
+        uid: "3",
+        name: "Mike Rodriguez",
+        role: "buddy",
+        skills: ["java", "android", "mobile development"],
+        interests: ["mobile apps", "entrepreneurship", "design"],
+        goals: "Launch my own mobile app startup",
+        availability: ["evenings", "weekends"],
+        location: "Austin, TX",
+        profilePicUrl: "",
+        bio: "Mobile developer with startup dreams"
+      }
+    ];
+
+    return mockUsers.map((user, index) => ({
+      user,
+      score: Math.floor(Math.random() * 40) + 60 // Random score between 60-100
+    }));
+  };
 
   const filteredMatches = matches.filter((m) => {
     const buddy = m.user;
@@ -61,6 +107,8 @@ export default function BuddyMatchPage() {
       (buddy.goals || "").toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FFFFEEC] via-white to-[#FFFFEEC]">

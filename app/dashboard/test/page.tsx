@@ -1,7 +1,5 @@
 "use client";
 import { useState } from "react";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
 
 export default function TestPage() {
   const [backendStatus, setBackendStatus] = useState("");
@@ -24,22 +22,17 @@ export default function TestPage() {
   const testMatching = async () => {
     setLoading(true);
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        setMatchTest("❌ No user logged in");
+      // Load user profile from localStorage
+      const savedProfile = localStorage.getItem('user_profile');
+      if (!savedProfile) {
+        setMatchTest("❌ No user profile found");
         return;
       }
 
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (!userDoc.exists()) {
-        setMatchTest("❌ User profile not found");
-        return;
-      }
-
-      const userProfile = userDoc.data();
+      const userProfile = JSON.parse(savedProfile);
       console.log("Testing with profile:", userProfile);
 
-      const res = await fetch("http://localhost:3000/match", {
+      const res = await fetch("/api/match/buddy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userProfile }),

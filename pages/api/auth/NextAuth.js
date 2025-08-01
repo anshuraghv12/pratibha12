@@ -1,8 +1,6 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcrypt';
-import { db } from '../../../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export default NextAuth({
   providers: [
@@ -13,21 +11,17 @@ export default NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('username', '==', credentials.username));
-        const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
-          return null;
+        // For demo purposes, accept any username/password combination
+        // In a real app, you would validate against a database
+        if (credentials.username && credentials.password) {
+          return {
+            id: `user_${Date.now()}`,
+            username: credentials.username,
+            email: `${credentials.username}@example.com`,
+            name: credentials.username
+          };
         }
-        const userDoc = querySnapshot.docs[0];
-        const user = userDoc.data();
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) {
-          return null;
-        }
-        const { password, ...userWithoutPass } = user;
-        userWithoutPass.id = userDoc.id;
-        return userWithoutPass;
+        return null;
       }
     })
   ],

@@ -1,8 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { Users, Filter, Search, Star, MapPin, Calendar, MessageCircle, RefreshCw, User } from "lucide-react";
 
 const SKILLS_LIST = [
@@ -52,39 +50,37 @@ export default function MatchPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
+
     const fetchProfileAndMatches = async () => {
       setLoading(true);
       setError("");
       try {
-        const user = auth.currentUser;
-        if (!user) {
-          router.push("/auth/signin");
-          return;
-        }
-
-        // Get current user profile
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (!userDoc.exists()) {
+        // Load user profile from localStorage
+        const savedProfile = localStorage.getItem('user_profile');
+        if (!savedProfile) {
           setError("Profile not found. Please complete your profile first.");
           setLoading(false);
           return;
         }
 
-        const userProfile = userDoc.data();
+        const userProfile = JSON.parse(savedProfile);
         setProfile(userProfile);
         
         console.log("Current user profile:", userProfile);
 
-        // Get all users from Firestore
-        const usersSnapshot = await getDocs(collection(db, "users"));
-        const allUsers = usersSnapshot.docs.map(doc => doc.data());
+        // Generate mock users for demo
+        const mockUsers = generateMockUsers();
         
-        console.log("Total users in database:", allUsers.length);
+        console.log("Total users in database:", mockUsers.length);
 
-        // Filter available users (exclude current user and pending reviews)
-        const availableUsers = allUsers.filter((u: any) => 
+        // Filter available users (exclude current user)
+        const availableUsers = mockUsers.filter((u: any) => 
           u.uid !== userProfile.uid && 
-          u.status !== 'pending_review' && 
           u.role && 
           u.skills && 
           u.skills.length > 0
@@ -137,6 +133,72 @@ export default function MatchPage() {
     fetchProfileAndMatches();
   }, [router]);
 
+  // Generate mock users for demo
+  const generateMockUsers = () => {
+    return [
+      {
+        uid: "1",
+        name: "Alex Johnson",
+        role: "buddy",
+        skills: ["javascript", "react", "python"],
+        interests: ["web development", "AI", "startups"],
+        goals: "Build a successful tech career and help others grow",
+        availability: ["monday", "wednesday", "friday"],
+        location: "San Francisco, CA",
+        profilePicUrl: "",
+        status: "active"
+      },
+      {
+        uid: "2",
+        name: "Sarah Chen",
+        role: "buddy",
+        skills: ["python", "data science", "machine learning"],
+        interests: ["AI", "research", "statistics"],
+        goals: "Master data science and contribute to research",
+        availability: ["tuesday", "thursday", "weekends"],
+        location: "New York, NY",
+        profilePicUrl: "",
+        status: "active"
+      },
+      {
+        uid: "3",
+        name: "Mike Rodriguez",
+        role: "buddy",
+        skills: ["java", "android", "mobile development"],
+        interests: ["mobile apps", "entrepreneurship", "design"],
+        goals: "Launch my own mobile app startup",
+        availability: ["evenings", "weekends"],
+        location: "Austin, TX",
+        profilePicUrl: "",
+        status: "active"
+      },
+      {
+        uid: "4",
+        name: "Emily Davis",
+        role: "mentor",
+        skills: ["leadership", "project management", "communication"],
+        interests: ["mentoring", "team building", "strategy"],
+        goals: "Help others grow and develop their careers",
+        availability: ["weekdays", "evenings"],
+        location: "Seattle, WA",
+        profilePicUrl: "",
+        status: "active"
+      },
+      {
+        uid: "5",
+        name: "David Kim",
+        role: "mentee",
+        skills: ["javascript", "html", "css"],
+        interests: ["web development", "design", "user experience"],
+        goals: "Become a full-stack developer",
+        availability: ["weekends", "evenings"],
+        location: "Los Angeles, CA",
+        profilePicUrl: "",
+        status: "active"
+      }
+    ];
+  };
+
   const toggleMultiSelect = (value: string, arr: string[], setArr: (a: string[]) => void, max: number) => {
     if (arr.includes(value)) {
       setArr(arr.filter((v) => v !== value));
@@ -167,6 +229,8 @@ export default function MatchPage() {
     if (profile.role === "mentee") return "Mentor";
     return "Match";
   };
+
+
 
   if (loading) {
     return (

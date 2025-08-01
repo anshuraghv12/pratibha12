@@ -1,15 +1,6 @@
 const express = require('express');
 const Fuse = require('fuse.js');
-const { initializeApp, cert } = require('firebase-admin/app');
-const { getFirestore } = require('firebase-admin/firestore');
 const cors = require('cors');
-const serviceAccount = require('./peerup-64fbf-firebase-adminsdk-fbsvc-688bc91130.json');
-
-initializeApp({
-  credential: cert(serviceAccount),
-  projectId: 'peerup-64fbf',
-});
-const db = getFirestore();
 
 const app = express();
 app.use(express.json());

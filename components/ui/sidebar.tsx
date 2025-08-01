@@ -18,8 +18,6 @@ import {
   Heart,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -28,14 +26,19 @@ export function Sidebar() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
+
     const fetchUser = async () => {
       try {
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-          if (userDoc.exists()) {
-            setUser(userDoc.data());
-          }
+        // Load user profile from localStorage
+        const savedProfile = localStorage.getItem('user_profile');
+        if (savedProfile) {
+          const userData = JSON.parse(savedProfile);
+          setUser(userData);
         }
       } catch (error) {
         console.error("Error fetching user:", error);
@@ -137,7 +140,9 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     try {
-      await auth.signOut();
+      // Clear localStorage and redirect
+      localStorage.removeItem('user_profile');
+      localStorage.removeItem('peerup_user');
       window.location.href = "/";
     } catch (error) {
       console.error("Error logging out:", error);
